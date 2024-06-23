@@ -2,12 +2,19 @@ package com.normaliser;
 
 
 import com.classes.Job;
+import com.classes.StringUtils;
+import com.exceptions.StringNotSuitableForNormalizationException;
+
 import java.util.*;
 import static com.classes.StringUtils.*;
 
 public class Normaliser {
 
     public  TreeMap<Integer, Set<Job>> normalize(String jobPositionNormalised, List<Job> jobsPosition) {
+        if(StringUtils.isStringNullOrEmpty(jobPositionNormalised)) {
+            throw new StringNotSuitableForNormalizationException();
+        }
+
         return matchKeywords(jobPositionNormalised, jobsPosition);
     }
 
@@ -17,7 +24,7 @@ public class Normaliser {
         TreeMap<Integer, Set<Job>> mapScores = new TreeMap<>();
 
         for (Job job : jobsPosition) {
-            int score = calculateQualityScore(job, jobPositionNormalised,arrayTokens, job.getKeywords());
+            int score = calculateQualityScore(job, jobPositionNormalised, arrayTokens, job.getKeywords());
             addElement(mapScores, score, job);
         }
 

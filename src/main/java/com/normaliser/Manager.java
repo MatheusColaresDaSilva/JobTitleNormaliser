@@ -1,13 +1,9 @@
 package com.normaliser;
 
 import com.classes.Job;
-import com.classes.Position;
 import com.classes.StringUtils;
+import com.exceptions.JobNotFoundException;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
@@ -22,11 +18,13 @@ public class Manager {
     private JsonReader jsonReader;
     private List<Job> jobsPosition;
     private Normaliser normaliser;
+    private String jobPositionNormalised;
 
     private Manager(JsonReader jsonReader, Normaliser normaliser){
         this.jsonReader = jsonReader;
         this.normaliser = normaliser;
         this.jobsPosition = jsonReader.read();
+        this.jobPositionNormalised = "";
     }
 
     public static synchronized Manager getInstance(JsonReader jsonReader, Normaliser normaliser) {
@@ -36,31 +34,23 @@ public class Manager {
         return manager;
     }
 
-    public String normalise(String jobPosition) throws Exception {
+    public Set<Job> normalise(String jobPosition) {
 
-        String jobPositionNormalised = StringUtils.normaliseStringPosition(jobPosition).toLowerCase();
+        jobPositionNormalised = StringUtils.normaliseStringPosition(jobPosition);
 
-        TreeMap<Integer, Set<Job>> mapScores = normaliser.normalize(jobPositionNormalised, jobsPosition);
-
-        Job bestAnswer;
-        ArrayList<Job> jobWithBiggestScores = new ArrayList<>(mapScores.lastEntry().getValue());
-        if(jobWithBiggestScores.size() > 1) {
-            System.out.println(String.format("We found %d possibilities that matches %s. Chose the most correct one:", jobWithBiggestScores.size(), jobPositionNormalised));
-            for (int i = 0; i < jobWithBiggestScores.size(); i++) {
-                System.out.println(String.format("%d. %s",(i + 1), jobWithBiggestScores.get(i).getJobTitle()));
-            }
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            int input = Integer.parseInt(reader.readLine()) -1;
-
-            bestAnswer = jobWithBiggestScores.get(input);
-        } else {
-            bestAnswer = jobWithBiggestScores.get(0);
+        try {
+            TreeMap<Integer, Set<Job>> mapScores = normaliser.normalize(jobPositionNormalised, jobsPosition);
+            return mapScores.lastEntry().getValue();
+        } catch (RuntimeException e) {
+            return null;
         }
 
-        Job jobFound = jobsPosition.stream().filter(job -> job.equals(bestAnswer)).findFirst().orElseThrow(() -> new Exception("Job Not Found"));
+    }
+
+    public void saveBestAnswerInMemory(Job bestAnswer) throws Exception {
+        Job jobFound = jobsPosition.stream().filter(job -> job.equals(bestAnswer)).findFirst().orElseThrow(() -> new JobNotFoundException());
         jobFound.updateKeyWords(jobPositionNormalised.split(" "));
         jsonReader.updateJson(jobsPosition);
-        return bestAnswer.getJobTitle();
     }
+
 }
