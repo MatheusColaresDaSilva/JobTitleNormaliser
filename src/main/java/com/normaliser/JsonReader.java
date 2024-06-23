@@ -6,6 +6,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.*;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -51,9 +53,12 @@ public class JsonReader {
     public void updateJson(List<Job> jobsPosition) {
         ObjectMapper mapper = new ObjectMapper();
         try {
-            mapper.writeValue(new File("src/main/resources/memory.json"), jobsPosition );
+            String fileName = "memory.json";
+            String jarPath = Paths.get(JsonReader.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParent().toString();
+            String filePath = Paths.get(jarPath, fileName).toString();
+            mapper.writeValue(new File(filePath), jobsPosition );
 
-        } catch (IOException e) {
+        } catch (IOException | URISyntaxException e) {
             e.printStackTrace();
         }
     }
