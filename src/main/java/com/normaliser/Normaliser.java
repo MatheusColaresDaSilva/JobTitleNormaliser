@@ -2,10 +2,15 @@ package com.normaliser;
 
 
 import com.classes.Job;
+import com.classes.Position;
 import com.classes.StringUtils;
 import com.exceptions.StringNotSuitableForNormalizationException;
 
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
 import static com.classes.StringUtils.*;
 
 public class Normaliser {
@@ -22,10 +27,24 @@ public class Normaliser {
         String[] arrayTokens = jobPositionNormalised.split(" ");
 
         TreeMap<Integer, Set<Job>> mapScores = new TreeMap<>();
+        int i = 0;
+        Thread thread = null;
+        try{
+            for (Job job : jobsPosition) {
 
-        for (Job job : jobsPosition) {
-            int score = calculateQualityScore(job, jobPositionNormalised, arrayTokens, job.getKeywords());
-            addElement(mapScores, score, job);
+                    int taskNumber = i++;
+                    thread = new Thread(() -> {
+                        System.out.println("Task " + taskNumber + " is running.");
+                        int score = calculateQualityScore(job, jobPositionNormalised, arrayTokens, job.getKeywords());
+                        addElement(mapScores, score, job);
+                        System.out.println("Task " + taskNumber + " has finished.");
+                    });
+                    thread.start();
+            }
+
+          thread.join();
+        } catch (InterruptedException | NullPointerException  e) {
+            addElement(mapScores, -1, new Position());
         }
 
         return mapScores;
